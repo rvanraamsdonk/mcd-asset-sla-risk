@@ -3,8 +3,10 @@
 
 usage:
     python3 sla_risk.py --priority P2 --opened 2026-10-01T07:15:00Z [--now 2026-10-01T13:30:00Z]
+    python3 sla_risk.py --json < request.json      # {"priority", "opened", "now" (optional)}
 
 Prints one JSON object. --now defaults to the current time (UTC).
+Time is calendar time: every minute between opened and now counts.
 """
 import argparse
 import json
@@ -53,12 +55,21 @@ def assess(priority, opened, now=None):
 
 def main(argv=None):
     p = argparse.ArgumentParser(description="SLA breach risk for one ticket")
-    p.add_argument("--priority", required=True, help="P1..P4")
-    p.add_argument("--opened", required=True, help="when the ticket was opened, ISO 8601")
+    p.add_argument("--json", action="store_true", help="read {priority, opened, now} as JSON on standard input")
+    p.add_argument("--priority", help="P1..P4")
+    p.add_argument("--opened", help="when the ticket was opened, ISO 8601")
     p.add_argument("--now", help="evaluation time, ISO 8601 (default: current time)")
     a = p.parse_args(argv)
     try:
-        out = assess(a.priority, a.opened, a.now)
+        if a.json:
+            request = json.load(sys.stdin)
+            if not isinstance(request, dict) or not request.get("priority") or not request.get("opened"):
+                raise ValueError("the JSON request needs 'priority' and 'opened'")
+            out = assess(request["priority"], request["opened"], request.get("now"))
+        else:
+            if not (a.priority and a.opened):
+                raise ValueError("--priority and --opened are required (or use --json)")
+            out = assess(a.priority, a.opened, a.now)
     except ValueError as e:
         print("error: %s" % e, file=sys.stderr)
         return 2

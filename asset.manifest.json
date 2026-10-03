@@ -1,0 +1,40 @@
+{
+  "manifest_version": "1",
+  "asset": {"id": "sla-risk", "name": "SLA Risk Agent", "version": "1.0.0", "kind": "agent"},
+  "purpose": "Estimates how close a ticket is to breaching its resolution target, from its priority and the time elapsed since it was opened.",
+  "properties": {
+    "time_basis": "calendar",
+    "_about": "time_basis: every minute between opened and now counts (nights and weekends included)."
+  },
+  "agent": {
+    "role": "SLA analyst for an application management team",
+    "instructions": "README.md",
+    "tools": [],
+    "engine": "Plain rules in sla_risk.py. No model or credentials needed."
+  },
+  "inputs": [
+    {"name": "priority", "type": "string", "required": true, "description": "P1 to P4."},
+    {"name": "opened", "type": "string", "required": true, "description": "When the ticket was opened, ISO 8601."},
+    {"name": "now", "type": "string", "required": false, "description": "Evaluation time, ISO 8601. Default: the current time."}
+  ],
+  "outputs": [
+    {"name": "priority", "type": "string", "description": "The priority, repeated."},
+    {"name": "target_minutes", "type": "integer", "description": "Resolution target: P1 240, P2 480, P3 1440, P4 4320 minutes."},
+    {"name": "elapsed_minutes", "type": "integer", "description": "Calendar minutes since the ticket was opened."},
+    {"name": "minutes_left", "type": "integer", "description": "Target minus elapsed; negative when breached."},
+    {"name": "risk", "type": "string", "description": "low, medium (half or less left), high (a quarter or less left) or breached."}
+  ],
+  "requirements": {"runtime": "Python 3.9 or later, standard library only", "other_assets": [], "external_systems": [], "credentials": []},
+  "how_to_run": {
+    "build": null,
+    "run": "python3 sla_risk.py --json",
+    "interface": "One JSON object on standard input; one JSON object on standard output. Exit code 2 and a message on standard error for invalid input.",
+    "check": "python3 -m unittest test_sla_risk",
+    "example_input": "examples/input.json",
+    "example_output": "examples/output.json"
+  },
+  "deployment_targets": ["client", "firm", "laptop"],
+  "sharing_restriction": {"may_leave_firm": true, "note": "Contains no client data."},
+  "owner": {"name": "Priya Nair", "contact": "priya.nair@firm.example", "service_line": "AMS"},
+  "listing": {"marketplace": "ams-asset-exchange", "reference": "AMS-003"}
+}

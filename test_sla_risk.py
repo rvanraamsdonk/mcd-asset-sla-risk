@@ -1,6 +1,12 @@
+import json
+import subprocess
+import sys
 import unittest
+from pathlib import Path
 
 from sla_risk import assess
+
+ROOT = Path(__file__).resolve().parent
 
 
 class T(unittest.TestCase):
@@ -20,6 +26,13 @@ class T(unittest.TestCase):
     def test_bad_priority(self):
         with self.assertRaises(ValueError):
             assess("P9", "2026-10-01T07:00:00Z")
+
+    def test_json_mode_matches_the_example(self):
+        done = subprocess.run([sys.executable, "sla_risk.py", "--json"], cwd=str(ROOT), capture_output=True, text=True,
+                              input=(ROOT / "examples" / "input.json").read_text(encoding="utf-8"))
+        self.assertEqual(done.returncode, 0, done.stderr)
+        expected = json.loads((ROOT / "examples" / "output.json").read_text(encoding="utf-8"))
+        self.assertEqual(json.loads(done.stdout), expected)
 
 
 if __name__ == "__main__":
